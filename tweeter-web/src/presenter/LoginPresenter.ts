@@ -1,41 +1,45 @@
 import { AuthToken, User } from "tweeter-shared";
-import { AuthenticationService } from "../model.service/AuthenticationService";
+import { UserService } from "../model.service/UserService";
 
 export interface LoginView {
-    updateUserInfo: (user: User, displayedUser: User, authToken: AuthToken, rememberMe: boolean) => void;
     
-    setIsLoading: (isLoading: boolean) => void;
+  setIsLoading: (isLoading: boolean) => void;
+  updateUserInfo: (user: User, displayedUser: User, authToken: AuthToken, rememberMe: boolean) => void;
+  displayErrorMessage: (message: string) => void;
+  navigate: (path: string) => void;
 }
 
 
 export class LoginPresenter {
-    // private _view: LoginView;
-    // private loginService: AuthenticationService;
+    private userService: UserService;
+    private _view: LoginView;
 
-    // protected constructor(view: LoginView) {
-    //     this._view = view;
-    //     this.loginService = new AuthenticationService();
-    // }
+    public constructor(view: LoginView) {
+        this.userService = new UserService();
+        this._view = view;
+    }
 
-    // public async doLogin(alias: string, password: string, rememberMe: boolean, originalUrl: string)  {
-    //     try {
-    //       this._view.setIsLoading(true);
+    public async doLogin (alias: string, password: string, rememberMe: boolean, originalUrl: string) {
+        try {
+          this._view.setIsLoading(true);
     
-    //       const [user, authToken] = await this.loginService.login(alias, password);
+          const [user, authToken] = await this.userService.login(alias, password);
     
-    //       this._view.updateUserInfo(user, user, authToken, rememberMe);
+          this._view.updateUserInfo(user, user, authToken, rememberMe);
     
-    //       if (!!props.originalUrl) {
-    //         navigate(props.originalUrl);
-    //       } else {
-    //         navigate(`/feed/${user.alias}`);
-    //       }
-    //     } catch (error) {
-    //       displayErrorMessage(
-    //         `Failed to log user in because of exception: ${error}`,
-    //       );
-    //     } finally {
-    //       setIsLoading(false);
-    //     }
-    //   };
+          if (!!originalUrl) {
+            this._view.navigate(originalUrl);
+          } else {
+            this._view.navigate(`/feed/${user.alias}`);
+          }
+        } catch (error) {
+          this._view.displayErrorMessage(
+            `Failed to log user in because of exception: ${error}`,
+          );
+        } finally {
+          this._view.setIsLoading(false);
+        }
+      };
+    
+
 }
