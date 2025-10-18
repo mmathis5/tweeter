@@ -8,13 +8,12 @@ import UserItem from "../userItem/UserItem";
 import { useMessageActions } from "../toaster/MessageHooks";
 import { useUserInfo, useUserInfoActions } from "../userInfo/UserInfoHooks";
 import { UserItemPresenter } from "../../presenter/UserItemPresenter";
-import { UserItemView } from "../../presenter/UserItemPresenter";
+import { PagedItemView } from "../../presenter/PagedItemPresenter";
 
 interface Props {
     featureUrl: string,
     //I'm a little lost about the presenterFactory parameter. I think it's a factory function that creates a new presenter for each user item scroller.
-    presenterFactory: (listener: UserItemView) => UserItemPresenter;
-    
+    presenterFactory: (listener: PagedItemView<User>) => UserItemPresenter;  
 }
 
 
@@ -26,7 +25,7 @@ const UserItemScroller = (props: Props) => {
     const { setDisplayedUser } = useUserInfoActions();
     const { displayedUser: displayedUserAliasParam } = useParams();
     //This is essentially an interface implementation
-    const listener: UserItemView = {
+    const listener: PagedItemView<User> = {
       addItems: (newItems: User[]) =>
         setItems((previousItems) => [...previousItems, ...newItems]),
       displayErrorMessage: displayErrorMessage

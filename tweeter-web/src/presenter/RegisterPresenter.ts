@@ -2,56 +2,39 @@ import { AuthToken, User } from "tweeter-shared";
 import { UserService } from "../model.service/UserService";
 import { ChangeEvent } from "react";
 import { Buffer } from "buffer";
+import { Presenter, View } from "./Presenter";
+import { AuthenticationPresenter, AuthenticationView } from "./AuthenticationPresenter";
 
-export interface RegisterView {
-    setIsLoading: (isLoading: boolean) => void;
-    updateUserInfo: (user: User, displayedUser: User, authToken: AuthToken, rememberMe: boolean) => void;
-    navigate: (path: string) => void;
-    displayErrorMessage: (message: string) => void;
+export interface RegisterView extends AuthenticationView {
     setImageUrl: (url: string) => void;
     setImageBytes: (bytes: Uint8Array) => void;
     setImageFileExtension: (extension: string) => void;
 }
 
-export class RegisterPresenter {
-    private userService: UserService;
-    private _view: RegisterView;
-
+export class RegisterPresenter extends AuthenticationPresenter<RegisterView> {
     public constructor(view: RegisterView) {
-        this.userService = new UserService();
-        this._view = view;
+        super(view);
     }
-    
+
     public async doRegister (
-        firstName: string,
-        lastName: string,
-        alias: string,
-        password: string,
-        imageBytes: Uint8Array,
-        imageFileExtension: string,
-        rememberMe: boolean
-    ) {
-        try {
-          this._view.setIsLoading(true);
-    
-          const [user, authToken] = await this.userService.register(
-            firstName,
-            lastName,
-            alias,
-            password,
-            imageBytes,
-            imageFileExtension
-          );
-          this._view.updateUserInfo(user, user, authToken, rememberMe);
-          this._view.navigate(`/feed/${user.alias}`);
-        } catch (error) {
-          this._view.displayErrorMessage(
-            `Failed to register user because of exception: ${error}`,
-          );
-        } finally {
-         this._view.setIsLoading(false);
-        }
-      };
+      firstName: string,
+      lastName: string,
+      alias: string,
+      password: string,
+      imageBytes: Uint8Array,
+      imageFileExtension: string,
+      rememberMe: boolean
+  ) {
+    this.doAuthentication(async() => this.userService.register(
+        firstName,
+        lastName,
+        alias,
+        password,
+        imageBytes,
+        imageFileExtension),
+        rememberMe, 
+        `/feed/${alias}`);
+    };
 
       public checkSubmitButtonStatus (firstName: string, lastName: string, alias: string, password: string, imageUrl: string, imageFileExtension: string): boolean {
         return (
@@ -111,5 +94,8 @@ export class RegisterPresenter {
         const file = event.target.files?.[0];
         this.handleImageFile(file);
       };
-    
+
+      protected operationType(): string {
+        return "register user";
+      }   
 }
