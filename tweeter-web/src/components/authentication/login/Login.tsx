@@ -11,7 +11,7 @@ import { AuthenticationView } from "../../../presenter/AuthenticationPresenter";
 
 interface Props {
   originalUrl?: string;
-  presenterFactory: (view: AuthenticationView) => LoginPresenter;
+  presenter?: LoginPresenter;
 }
 
 const Login = (props: Props) => {
@@ -33,7 +33,7 @@ const Login = (props: Props) => {
 
   const presenterRef = useRef<LoginPresenter | null>(null)
   if(!presenterRef.current){
-    presenterRef.current = props.presenterFactory(listener);
+    presenterRef.current = props.presenter || new LoginPresenter(listener);
   }
 
   const checkSubmitButtonStatus = (): boolean => {

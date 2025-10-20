@@ -15,11 +15,9 @@ import { FolloweePresenter } from "./presenter/FolloweePresenter";
 import { FollowerPresenter } from "./presenter/FollowerPresenter";
 import { FeedPresenter } from "./presenter/FeedPresenter";
 import { StoryPresenter } from "./presenter/StoryPresenter";
-import { LoginPresenter } from "./presenter/LoginPresenter";
 import { RegisterPresenter, RegisterView } from "./presenter/RegisterPresenter";
 import { PagedItemView } from "./presenter/PagedItemPresenter";
 import { Status, User } from "tweeter-shared";
-import { AuthenticationView } from "./presenter/AuthenticationPresenter";
 import StatusItem from "./components/statusItem/StatusItem";
 import UserItem from "./components/userItem/UserItem";
 import ItemScroller from "./components/mainLayout/ItemScroller";
@@ -75,9 +73,9 @@ const UnauthenticatedRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login presenterFactory={(view: AuthenticationView) => new LoginPresenter(view)} />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register presenterFactory={(view: RegisterView) => new RegisterPresenter(view)} />} />
-      <Route path="*" element={<Login originalUrl={location.pathname} presenterFactory={(view: AuthenticationView) => new LoginPresenter(view)} />} />
+      <Route path="*" element={<Login originalUrl={location.pathname} />} />
     </Routes>
   );
 };

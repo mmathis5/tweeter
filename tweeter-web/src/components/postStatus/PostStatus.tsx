@@ -5,7 +5,9 @@ import { useMessageActions } from "../toaster/MessageHooks";
 import { useUserInfo } from "../userInfo/UserInfoHooks";
 import { PostStatusPresenter, PostStatusView } from "../../presenter/PostStatusPresenter";
 
-const PostStatus = () => {
+const PostStatus = ({presenter}: {presenter?: PostStatusPresenter}) => {
+
+  
   const { displayInfoMessage, displayErrorMessage, deleteMessage } = useMessageActions();
 
   const { currentUser, authToken } = useUserInfo();
@@ -19,8 +21,8 @@ const PostStatus = () => {
     setIsLoading: setIsLoading,
     setPost: setPost
   }
+  const presenterRef = presenter ?? new PostStatusPresenter(listener);
 
-  const presenterRef = new PostStatusPresenter(listener);
 
 
   const submitPost = async (
