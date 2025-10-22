@@ -18,7 +18,7 @@ export class PostStatusPresenter extends Presenter<PostStatusView> {
     }
 
     public get statusService(): StatusService {
-        return this.statusService;
+        return this._statusService;
     }
 
     public async submitPost (event: React.MouseEvent,

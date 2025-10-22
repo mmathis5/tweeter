@@ -27,17 +27,13 @@ describe("Login Component", () => {
 
     it("The sign-in button is disabled if either the alias or password field is cleared.", async () => {
         const {signInButton, aliasField, passwordField, user} = renderLoginAndGetElement("/");
-        //both fields have text, so the button should be enabled
         await user.type(aliasField, "test");
         await user.type(passwordField, "test");
         expect(signInButton).toBeEnabled();
-        //clear the alias field, so the button should be disabled
         await user.clear(aliasField);
         expect(signInButton).toBeDisabled();
-        //type the alias field again, so the button should be enabled
         await user.type(aliasField, "test");
         expect(signInButton).toBeEnabled();
-        //clear the password field, so the button should be disabled
         await user.clear(passwordField);
         expect(signInButton).toBeDisabled();
     })

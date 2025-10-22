@@ -1,7 +1,7 @@
 import { PostStatusPresenter, PostStatusView } from "../../src/presenter/PostStatusPresenter";
 import { StatusService } from "../../src/model.service/StatusService";
 import { mock, instance, spy, verify, when, anything, capture} from "@typestrong/ts-mockito";
-import { AuthToken, Status, User } from "tweeter-shared";
+import { AuthToken, User } from "tweeter-shared";
 import React from "react";
 
 describe("PostStatusPresenter", () => {
