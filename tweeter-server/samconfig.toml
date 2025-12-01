@@ -1,0 +1,9 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "tweeter-server"
+s3_bucket = "fall2025-cs340-tweeter"
+region = "us-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
+image_repositories = []

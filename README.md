@@ -30,5 +30,4 @@ Lines 17-18 in Register.tsx, should I remove/modify them bc they're somewhat inc
 
 //View should be as dumb as possible. 
 
-//move all component into a MVP model. Everything that's using fake data. 
-//at least one hook (User navigation hook ) can move into a presenter. 
+Question about UserNavigationHook

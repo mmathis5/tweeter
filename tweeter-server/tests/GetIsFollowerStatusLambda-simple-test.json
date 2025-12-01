@@ -1,0 +1,16 @@
+{
+  "token": "test-token-123",
+  "user": {
+    "firstName": "Amy",
+    "lastName": "Ames",
+    "alias": "@amy",
+    "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/daisy_duck.png"
+  },
+  "selectedUser": {
+    "firstName": "Allen",
+    "lastName": "Anderson",
+    "alias": "@allen",
+    "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png"
+  }
+}
+

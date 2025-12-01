@@ -14,6 +14,7 @@
     "@types/react-dom": "^18.2.19",
     "bootstrap": "^5.3.3",
     "buffer": "^6.0.3",
+    "isomorphic-fetch": "^3.0.0",
     "node": "^20.11.1",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.1",
@@ -65,17 +66,15 @@
     "verbose": true,
     "testEnvironment": "jsdom",
     "moduleNameMapper": {
-        "\\.(css|less)$": "<rootDir>/test/__mocks__/styleMock.js"
+      "\\.(css|less)$": "<rootDir>/test/__mocks__/styleMock.js"
     },
     "testMatch": [
-        "<rootDir>/test/**/*.test.tsx",
-        "<rootDir>/test/**/*.test.ts"
+      "<rootDir>/test/**/*.test.tsx",
+      "<rootDir>/test/**/*.test.ts"
     ],
     "transform": {
-        "^.+\\.tsx?$": "ts-jest",
-        "\\.js$": "babel-jest"
+      "^.+\\.tsx?$": "ts-jest",
+      "\\.js$": "babel-jest"
     }
   }
 }
-
-

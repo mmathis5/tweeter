@@ -1,4 +1,4 @@
-import { User, AuthToken, FakeData, PagedUserItemRequest, FollowerStatusRequest, FollowServiceGeneralRequest } from "tweeter-shared";
+import { User, AuthToken, FakeData, PagedUserItemRequest, FollowerStatusRequest, FollowServiceGeneralRequest, FollowUnfollowRequest } from "tweeter-shared";
 import { Service } from "./Service";
 import { ServerFacade } from "../network/ServerFacade";
 
@@ -77,31 +77,29 @@ export class FollowService extends Service {
 
   public async follow(
     authToken: AuthToken,
+    currentUser: User,
     userToFollow: User
   ): Promise<[followerCount: number, followeeCount: number]> {
-    const request: FollowServiceGeneralRequest = {
+    const request: FollowUnfollowRequest = {
       token: authToken.token,
-      user: userToFollow.dto
+      user: currentUser.dto,
+      userToFollowOrUnfollow: userToFollow.dto
     };
     return this.serverFacade.follow(request);
-
-    //TODO: Remove this when you're sure that all you needed to do here was call the server
-    // const followerCount = await this.getFollowerCount(authToken, userToFollow);
-    // const followeeCount = await this.getFolloweeCount(authToken, userToFollow);
-
-    // return [followerCount, followeeCount];
   };
 
 
 
   public async unfollow(
     authToken: AuthToken,
+    currentUser: User,
     userToUnfollow: User
   ): Promise<[followerCount: number, followeeCount: number]> {
     
-    const request: FollowServiceGeneralRequest = {
+    const request: FollowUnfollowRequest = {
       token: authToken.token,
-      user: userToUnfollow.dto
+      user: currentUser.dto,
+      userToFollowOrUnfollow: userToUnfollow.dto
     };
     return this.serverFacade.unfollow(request);
     

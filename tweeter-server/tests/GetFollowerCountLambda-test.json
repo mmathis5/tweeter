@@ -1,0 +1,51 @@
+{
+  "test1_firstUser": {
+    "description": "Get follower count for @allen",
+    "request": {
+      "token": "test-token-123",
+      "user": {
+        "firstName": "Allen",
+        "lastName": "Anderson",
+        "alias": "@allen",
+        "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png"
+      }
+    }
+  },
+  "test2_secondUser": {
+    "description": "Get follower count for @amy",
+    "request": {
+      "token": "test-token-123",
+      "user": {
+        "firstName": "Amy",
+        "lastName": "Ames",
+        "alias": "@amy",
+        "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/daisy_duck.png"
+      }
+    }
+  },
+  "test3_middleUser": {
+    "description": "Get follower count for @chris",
+    "request": {
+      "token": "test-token-123",
+      "user": {
+        "firstName": "Chris",
+        "lastName": "Colston",
+        "alias": "@chris",
+        "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png"
+      }
+    }
+  },
+  "test4_lastUser": {
+    "description": "Get follower count for @kathy",
+    "request": {
+      "token": "test-token-123",
+      "user": {
+        "firstName": "Kathy",
+        "lastName": "Kunzler",
+        "alias": "@kathy",
+        "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/daisy_duck.png"
+      }
+    }
+  }
+}
+

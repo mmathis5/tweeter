@@ -40,14 +40,13 @@ export class ClientCommunicator {
         return response;
       } else {
         const error = await resp.json();
-        throw new Error(error.errorMessage);
+        throw new Error(error.error || error.errorMessage || JSON.stringify(error));
       }
     } catch (error) {
-      console.error(error);
+      const errorMessage = (error as Error)?.message || String(error);
+      console.error(`Client communicator ${params.method} failed:`, error);
       throw new Error(
-        `Client communicator ${params.method} failed:\n${
-          (error as Error).message
-        }`
+        `${errorMessage}`
       );
     }
   }

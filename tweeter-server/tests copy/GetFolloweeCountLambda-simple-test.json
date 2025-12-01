@@ -1,0 +1,10 @@
+{
+  "token": "test-token-123",
+  "user": {
+    "firstName": "Allen",
+    "lastName": "Anderson",
+    "alias": "@allen",
+    "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/donald_duck.png"
+  }
+}
+

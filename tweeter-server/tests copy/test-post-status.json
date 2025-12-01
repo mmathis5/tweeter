@@ -1,0 +1,22 @@
+{
+  "token": "test-auth-token-123",
+  "status": {
+    "post": "Hello world! This is my first status update.",
+    "user": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "alias": "@johndoe",
+      "imageUrl": "https://example.com/profile.jpg"
+    },
+    "timestamp": 1704067200000,
+    "segments": [
+      {
+        "_text": "Hello world! This is my first status update.",
+        "_startPostion": 0,
+        "_endPosition": 45,
+        "_type": "Text"
+      }
+    ]
+  }
+}
+

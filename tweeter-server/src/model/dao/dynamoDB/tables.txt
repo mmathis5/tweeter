@@ -1,0 +1,44 @@
+#### 1. Users Table
+- **Partition Key:** `alias` (String)
+- **Attributes:**
+  - `firstName` (String)
+  - `lastName` (String)
+  - `imageUrl` (String)
+  - `passwordHash` (String) - hashed password using bcryptjs
+  - `followerCount` (Number) - number of users following this user
+  - `followeeCount` (Number) - number of users this user follows
+- **Purpose:** Store user information, authentication, and cached follower/followee counts
+
+#### 2. AuthTokens Table
+- **Partition Key:** `token` (String)
+- **Attributes:**
+  - `userAlias` (String)
+  - `timestamp` (Number)
+- **Purpose:** Store active authentication tokens
+
+#### 3. Follows Table
+- **Partition Key:** `followerAlias` (String)
+- **Sort Key:** `followeeAlias` (String)
+- **Global Secondary Index (GSI):** `followeeAlias-followerAlias-index`
+  - **Partition Key:** `followeeAlias` (String)
+  - **Sort Key:** `followerAlias` (String)
+- **Purpose:** Store follow relationships (bidirectional queries)
+- **Note:** No count fields here; counts are maintained in Users table
+
+#### 4. Stories Table
+- **Partition Key:** `userAlias` (String)
+- **Sort Key:** `timestamp` (Number, descending)
+- **Attributes:**
+  - `post` (String)
+  - `user` (JSON/String) - serialized User object
+  - `segments` (JSON) - array of PostSegment objects
+- **Purpose:** Store all statuses posted by users (their story)
+
+#### 5. Feeds Table (Pre-computed)
+- **Partition Key:** `userAlias` (String)
+- **Sort Key:** `timestamp` (Number, descending)
+- **Attributes:**
+  - `post` (String)
+  - `user` (JSON/String) - serialized User object of the status author
+  - `segments` (JSON) - array of PostSegment objects
+- **Purpose:** Pre-computed feed for each user (contains statuses from people they follow)

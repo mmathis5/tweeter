@@ -77,7 +77,7 @@ const UserInfo = () => {
     authToken: AuthToken,
     userToFollow: User,
   ): Promise<void> => {
-    presenterRef.current!.followDisplayedUser(event, authToken, userToFollow);
+    presenterRef.current!.followDisplayedUser(event, authToken, currentUser!, userToFollow);
   };
 
   const unfollowDisplayedUser = async (
@@ -85,7 +85,7 @@ const UserInfo = () => {
     authToken: AuthToken,
     userToUnfollow: User,
   ): Promise<void> => {
-    presenterRef.current!.unfollowDisplayedUser(event, authToken, userToUnfollow);
+    presenterRef.current!.unfollowDisplayedUser(event, authToken, currentUser!, userToUnfollow);
   };
 
 

@@ -74,6 +74,7 @@ export class UserInfoPresenter extends Presenter<UserInfoView> {
       public async followDisplayedUser (
         event: React.MouseEvent,
         authToken: AuthToken,
+        currentUser: User,
         userToFollow: User,
 
       ): Promise<void> {
@@ -81,7 +82,7 @@ export class UserInfoPresenter extends Presenter<UserInfoView> {
           event, 
           userToFollow, 
           "Following",
-          () => this.followService.follow(authToken, userToFollow),
+          () => this.followService.follow(authToken, currentUser, userToFollow),
           true
         )
       };
@@ -89,6 +90,7 @@ export class UserInfoPresenter extends Presenter<UserInfoView> {
       public async unfollowDisplayedUser(
         event: React.MouseEvent,
         authToken: AuthToken,
+        currentUser: User,
         userToUnfollow: User,
 
       ): Promise<void> {
@@ -96,7 +98,7 @@ export class UserInfoPresenter extends Presenter<UserInfoView> {
           event,  
           userToUnfollow, 
           "Unfollowing",
-          () => this.followService.unfollow(authToken, userToUnfollow),
+          () => this.followService.unfollow(authToken, currentUser, userToUnfollow),
           false
         )
       };

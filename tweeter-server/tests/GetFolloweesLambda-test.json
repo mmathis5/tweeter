@@ -1,0 +1,44 @@
+{
+  "test1_firstPage": {
+    "description": "Get first page of followees for @allen",
+    "request": {
+      "token": "test-token-123",
+      "userAlias": "@allen",
+      "pageSize": 5,
+      "lastItem": null
+    }
+  },
+  "test2_secondPage": {
+    "description": "Get second page of followees for @allen",
+    "request": {
+      "token": "test-token-123",
+      "userAlias": "@allen",
+      "pageSize": 5,
+      "lastItem": {
+        "firstName": "Amy",
+        "lastName": "Ames",
+        "alias": "@amy",
+        "imageUrl": "https://faculty.cs.byu.edu/~jwilkerson/cs340/tweeter/images/daisy_duck.png"
+      }
+    }
+  },
+  "test3_smallPage": {
+    "description": "Get small page of followees for @bob",
+    "request": {
+      "token": "test-token-123",
+      "userAlias": "@bob",
+      "pageSize": 2,
+      "lastItem": null
+    }
+  },
+  "test4_lastPage": {
+    "description": "Get last page of followees (should have hasMore: false)",
+    "request": {
+      "token": "test-token-123",
+      "userAlias": "@chris",
+      "pageSize": 25,
+      "lastItem": null
+    }
+  }
+}
+

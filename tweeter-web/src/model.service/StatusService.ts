@@ -38,7 +38,7 @@ export class StatusService extends Service {
   ): Promise<void> {
     const request: PostStatusRequest = {
       token: authToken.token,
-      status: newStatus
+      status: newStatus.dto
     };
     return this.serverFacade.postStatus(request);
   };

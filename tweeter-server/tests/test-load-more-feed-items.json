@@ -1,0 +1,24 @@
+{
+  "token": "test-auth-token-123",
+  "userAlias": "@johndoe",
+  "pageSize": 10,
+  "lastItem": {
+    "post": "Previous status post",
+    "user": {
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "alias": "@janesmith",
+      "imageUrl": "https://example.com/jane.jpg"
+    },
+    "timestamp": 1704067100000,
+    "segments": [
+      {
+        "_text": "Previous status post",
+        "_startPostion": 0,
+        "_endPosition": 20,
+        "_type": "Text"
+      }
+    ]
+  }
+}
+
