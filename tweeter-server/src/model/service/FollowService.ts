@@ -14,9 +14,24 @@ export class FollowService extends Service {
     lastItem: UserDto | null
   ): Promise<[UserDto[], boolean]> {
     return await this.doWithDAOFactory(async (daoFactory) => {
-      return await daoFactory.getFollowDAO().getFollowees(userAlias, pageSize, lastItem?.alias ?? null);
-    });
+      // Get followee aliases from FollowDAO
+      const [followeeAliases, hasMore] = await daoFactory.getFollowDAO().getFolloweeAliases(
+        userAlias,
+        pageSize,
+        lastItem?.alias ?? null
+      );
 
+      // Fetch user data for each followee alias (service layer responsibility)
+      const followees: UserDto[] = [];
+      for (const alias of followeeAliases) {
+        const user = await daoFactory.getUserDAO().getUser(alias);
+        if (user) {
+          followees.push(user.dto);
+        }
+      }
+
+      return [followees, hasMore];
+    });
   };
 
   public async loadMoreFollowers(
@@ -26,7 +41,23 @@ export class FollowService extends Service {
     lastItem: UserDto | null
   ): Promise<[UserDto[], boolean]> {
     return await this.doWithDAOFactory(async (daoFactory) => {
-      return await daoFactory.getFollowDAO().getFollowers(userAlias, pageSize, lastItem?.alias ?? null);
+      // Get follower aliases from FollowDAO
+      const [followerAliases, hasMore] = await daoFactory.getFollowDAO().getFollowerAliases(
+        userAlias,
+        pageSize,
+        lastItem?.alias ?? null
+      );
+
+      // Fetch user data for each follower alias (service layer responsibility)
+      const followers: UserDto[] = [];
+      for (const alias of followerAliases) {
+        const user = await daoFactory.getUserDAO().getUser(alias);
+        if (user) {
+          followers.push(user.dto);
+        }
+      }
+
+      return [followers, hasMore];
     });
   };
 
@@ -66,7 +97,12 @@ export class FollowService extends Service {
     userToFollow: User
   ): Promise<[followerCount: number, followeeCount: number]> {
     return await this.doWithDAOFactory(async (daoFactory) => {
+      // Create follow relationship (FollowDAO only works with Follows table)
       await daoFactory.getFollowDAO().follow(currentUser.alias, userToFollow.alias);
+
+      // Update counts in Users table (service layer responsibility)
+      await daoFactory.getUserDAO().incrementFollowerCount(userToFollow.alias);
+      await daoFactory.getUserDAO().incrementFolloweeCount(currentUser.alias);
 
       // Get the updated counts for the user being followed
       const followerCount = await daoFactory.getFollowDAO().getFollowerCount(userToFollow.alias) ?? 0;
@@ -84,9 +120,14 @@ export class FollowService extends Service {
     userToUnfollow: User
   ): Promise<[followerCount: number, followeeCount: number]> {
     return await this.doWithDAOFactory(async (daoFactory) => {
+      // Remove follow relationship (FollowDAO only works with Follows table)
       await daoFactory.getFollowDAO().unfollow(currentUser.alias, userToUnfollow.alias);
 
-      // Get the updated counts for the user being followed
+      // Update counts in Users table (service layer responsibility)
+      await daoFactory.getUserDAO().decrementFollowerCount(userToUnfollow.alias);
+      await daoFactory.getUserDAO().decrementFolloweeCount(currentUser.alias);
+
+      // Get the updated counts for the user being unfollowed
       const followerCount = await daoFactory.getFollowDAO().getFollowerCount(userToUnfollow.alias) ?? 0;
       const followeeCount = await daoFactory.getFollowDAO().getFolloweeCount(userToUnfollow.alias) ?? 0;
 

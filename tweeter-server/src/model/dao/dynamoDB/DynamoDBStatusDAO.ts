@@ -5,8 +5,6 @@ import dynamoDBClient from "../util/DynamoDBClient";
 
 const STORIES_TABLE_NAME = "Stories";
 const FEEDS_TABLE_NAME = "Feed";
-const FOLLOWS_TABLE_NAME = "Follows";
-const GSI_NAME = "followeeAlias-followerAlias-index";
 const documentClient = DynamoDBDocumentClient.from(dynamoDBClient);
 
 export class DynamoDBStatusDAO implements IStatusDAO {
@@ -101,6 +99,8 @@ export class DynamoDBStatusDAO implements IStatusDAO {
     }
 
     async postStatus(status: Status): Promise<void> {
+        // This method should only store the status in the Stories table
+        // Business logic (getting followers, updating feeds) should be in service layer
         const statusDto = status.dto;
         const authorAlias = status.user.alias;
 
@@ -127,67 +127,41 @@ export class DynamoDBStatusDAO implements IStatusDAO {
 
         try {
             await documentClient.send(new PutCommand(storyParams));
-
-            // Get all followers of the status author
-            const followerAliases = await this.getAllFollowers(authorAlias);
-
-            // Add status to each follower's feed
-            const feedPromises = followerAliases.map(followerAlias => {
-                const feedParams = {
-                    TableName: FEEDS_TABLE_NAME,
-                    Item: {
-                        userAlias: followerAlias,
-                        timestamp: statusDto.timestamp,
-                        post: statusDto.post,
-                        user: statusDto.user,
-                        segments: segmentsPlain
-                    }
-                };
-                return documentClient.send(new PutCommand(feedParams));
-            });
-
-            await Promise.all(feedPromises);
         } catch (error) {
             console.error("Error posting status:", error);
             throw error;
         }
     }
 
-    private async getAllFollowers(followeeAlias: string): Promise<string[]> {
-        const followerAliases: string[] = [];
-        let lastEvaluatedKey: any = undefined;
+    async addStatusToFeed(userAlias: string, status: Status): Promise<void> {
+        // This method adds a status to a specific user's feed
+        const statusDto = status.dto;
 
-        do {
-            const params: any = {
-                TableName: FOLLOWS_TABLE_NAME,
-                IndexName: GSI_NAME,
-                KeyConditionExpression: "followeeAlias = :followeeAlias",
-                ExpressionAttributeValues: {
-                    ":followeeAlias": followeeAlias
-                },
-                Limit: 100 // Fetch in batches of 100
-            };
+        // Convert PostSegment class instances to plain objects for DynamoDB storage
+        const segmentsPlain = statusDto.segments.map(segment => ({
+            text: segment.text,
+            startPostion: segment.startPostion,
+            endPosition: segment.endPosition,
+            type: segment.type
+        }));
 
-            if (lastEvaluatedKey !== undefined) {
-                params.ExclusiveStartKey = lastEvaluatedKey;
+        const feedParams = {
+            TableName: FEEDS_TABLE_NAME,
+            Item: {
+                userAlias: userAlias,
+                timestamp: statusDto.timestamp,
+                post: statusDto.post,
+                user: statusDto.user,
+                segments: segmentsPlain
             }
+        };
 
-            try {
-                const result = await documentClient.send(new QueryCommand(params));
-                
-                if (result.Items && result.Items.length > 0) {
-                    const batchAliases = result.Items.map(item => item.followerAlias);
-                    followerAliases.push(...batchAliases);
-                }
-
-                lastEvaluatedKey = result.LastEvaluatedKey;
-            } catch (error) {
-                console.error("Error getting all followers:", error);
-                throw error;
-            }
-        } while (lastEvaluatedKey !== undefined);
-
-        return followerAliases;
+        try {
+            await documentClient.send(new PutCommand(feedParams));
+        } catch (error) {
+            console.error("Error adding status to feed:", error);
+            throw error;
+        }
     }
 }
 

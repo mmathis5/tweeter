@@ -19,7 +19,9 @@ export class AuthService extends Service {
             const currentTime = Date.now();
             const tokenAge = currentTime - tokenData.timestamp;
 
+            //if token is older than 30 minutes, delete token
             if (tokenAge > TOKEN_EXPIRATION_TIME_MS) {
+                await daoFactory.getAuthTokenDAO().deleteToken(token);
                 return false;
             }
 

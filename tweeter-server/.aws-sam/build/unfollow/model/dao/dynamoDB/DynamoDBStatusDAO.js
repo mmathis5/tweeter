@@ -8,8 +8,6 @@ const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const DynamoDBClient_1 = __importDefault(require("../util/DynamoDBClient"));
 const STORIES_TABLE_NAME = "Stories";
 const FEEDS_TABLE_NAME = "Feed";
-const FOLLOWS_TABLE_NAME = "Follows";
-const GSI_NAME = "followeeAlias-followerAlias-index";
 const documentClient = lib_dynamodb_1.DynamoDBDocumentClient.from(DynamoDBClient_1.default);
 class DynamoDBStatusDAO {
     async getFeed(userAlias, pageSize, lastStatusTimestamp) {
@@ -91,6 +89,8 @@ class DynamoDBStatusDAO {
         }
     }
     async postStatus(status) {
+        // This method should only store the status in the Stories table
+        // Business logic (getting followers, updating feeds) should be in service layer
         const statusDto = status.dto;
         const authorAlias = status.user.alias;
         // Convert PostSegment class instances to plain objects for DynamoDB storage
@@ -114,59 +114,39 @@ class DynamoDBStatusDAO {
         };
         try {
             await documentClient.send(new lib_dynamodb_1.PutCommand(storyParams));
-            // Get all followers of the status author
-            const followerAliases = await this.getAllFollowers(authorAlias);
-            // Add status to each follower's feed
-            const feedPromises = followerAliases.map(followerAlias => {
-                const feedParams = {
-                    TableName: FEEDS_TABLE_NAME,
-                    Item: {
-                        userAlias: followerAlias,
-                        timestamp: statusDto.timestamp,
-                        post: statusDto.post,
-                        user: statusDto.user,
-                        segments: segmentsPlain
-                    }
-                };
-                return documentClient.send(new lib_dynamodb_1.PutCommand(feedParams));
-            });
-            await Promise.all(feedPromises);
         }
         catch (error) {
             console.error("Error posting status:", error);
             throw error;
         }
     }
-    async getAllFollowers(followeeAlias) {
-        const followerAliases = [];
-        let lastEvaluatedKey = undefined;
-        do {
-            const params = {
-                TableName: FOLLOWS_TABLE_NAME,
-                IndexName: GSI_NAME,
-                KeyConditionExpression: "followeeAlias = :followeeAlias",
-                ExpressionAttributeValues: {
-                    ":followeeAlias": followeeAlias
-                },
-                Limit: 100 // Fetch in batches of 100
-            };
-            if (lastEvaluatedKey !== undefined) {
-                params.ExclusiveStartKey = lastEvaluatedKey;
+    async addStatusToFeed(userAlias, status) {
+        // This method adds a status to a specific user's feed
+        const statusDto = status.dto;
+        // Convert PostSegment class instances to plain objects for DynamoDB storage
+        const segmentsPlain = statusDto.segments.map(segment => ({
+            text: segment.text,
+            startPostion: segment.startPostion,
+            endPosition: segment.endPosition,
+            type: segment.type
+        }));
+        const feedParams = {
+            TableName: FEEDS_TABLE_NAME,
+            Item: {
+                userAlias: userAlias,
+                timestamp: statusDto.timestamp,
+                post: statusDto.post,
+                user: statusDto.user,
+                segments: segmentsPlain
             }
-            try {
-                const result = await documentClient.send(new lib_dynamodb_1.QueryCommand(params));
-                if (result.Items && result.Items.length > 0) {
-                    const batchAliases = result.Items.map(item => item.followerAlias);
-                    followerAliases.push(...batchAliases);
-                }
-                lastEvaluatedKey = result.LastEvaluatedKey;
-            }
-            catch (error) {
-                console.error("Error getting all followers:", error);
-                throw error;
-            }
-        } while (lastEvaluatedKey !== undefined);
-        return followerAliases;
+        };
+        try {
+            await documentClient.send(new lib_dynamodb_1.PutCommand(feedParams));
+        }
+        catch (error) {
+            console.error("Error adding status to feed:", error);
+            throw error;
+        }
     }
 }
 exports.DynamoDBStatusDAO = DynamoDBStatusDAO;

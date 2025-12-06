@@ -1,6 +1,7 @@
 import { AuthToken, User } from "tweeter-shared";
 import { Service } from "./Service";
 import { DAOFactory } from "../dao/DAOFactory";
+import bcrypt from "bcryptjs";
 
 export class UserService extends Service {
   constructor(daoFactory: DAOFactory) {
@@ -21,18 +22,24 @@ export class UserService extends Service {
     password: string
   ): Promise<[User, AuthToken]> {
     return await this.doWithDAOFactory(async (daoFactory) => {
-      // Authenticate user
-      const user = await daoFactory.getUserDAO().login(alias, password);
+      // Get user with password hash from DAO
+      const userData = await daoFactory.getUserDAO().getUserWithPasswordHash(alias);
       
-      if (user === null) {
-        throw new Error("unauthorized or invalid alias or password");
+      if (userData === null) {
+        throw new Error("unauthorized or invalid alias");
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, userData.passwordHash);
+      if (!isPasswordValid) {
+        throw new Error("unauthorized or invalid password");
       }
 
       // Generate and store token
       const token = AuthToken.Generate();
-      await daoFactory.getAuthTokenDAO().putToken(token, user.alias);
+      await daoFactory.getAuthTokenDAO().putToken(token, userData.user.alias);
 
-      return [user, token];
+      return [userData.user, token];
     });
   }
 
@@ -64,12 +71,16 @@ export class UserService extends Service {
         Buffer.from(userImageBytes).toString("base64")
       );
 
-      // Register user
-      const user = await daoFactory.getUserDAO().register(
+      // Hash password in service layer
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(password, saltRounds);
+
+      // Register user (password already hashed)
+      const user = await daoFactory.getUserDAO().putUserWithPasswordHash(
         firstName,
         lastName,
         alias,
-        password,
+        passwordHash,
         imageUrl
       );
 

@@ -1,5 +1,0 @@
-Feed not displaying followed users. Probably just totally broken. 
-
-followees displayed but no image. S3 bucket now public. Image works in Story. 
-
-followers not displayed even though it should

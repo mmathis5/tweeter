@@ -19,6 +19,18 @@ export interface IFollowDAO {
 
   getFollowerCount(followeeAlias: string): Promise<number>;
 
+  getFollowerAliases(
+    followeeAlias: string,
+    pageSize: number,
+    lastFollowerAlias: string | null
+  ): Promise<[string[], boolean]>;
+
+  getFolloweeAliases(
+    followerAlias: string,
+    pageSize: number,
+    lastFolloweeAlias: string | null
+  ): Promise<[string[], boolean]>;
+
   follow(followerAlias: string, followeeAlias: string): Promise<void>;
 
   unfollow(followerAlias: string, followeeAlias: string): Promise<void>;

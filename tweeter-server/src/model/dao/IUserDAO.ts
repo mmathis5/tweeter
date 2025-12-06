@@ -5,14 +5,22 @@ export interface IUserDAO {
 
   putUser(user: User): Promise<void>;
 
-  login(alias: string, password: string): Promise<User | null>;
+  getUserWithPasswordHash(alias: string): Promise<{ user: User; passwordHash: string } | null>;
 
-  register(
+  putUserWithPasswordHash(
     firstName: string,
     lastName: string,
     alias: string,
-    password: string,
+    passwordHash: string,
     imageUrl: string
   ): Promise<User>;
+
+  incrementFollowerCount(alias: string): Promise<void>;
+
+  decrementFollowerCount(alias: string): Promise<void>;
+
+  incrementFolloweeCount(alias: string): Promise<void>;
+
+  decrementFolloweeCount(alias: string): Promise<void>;
 }
 

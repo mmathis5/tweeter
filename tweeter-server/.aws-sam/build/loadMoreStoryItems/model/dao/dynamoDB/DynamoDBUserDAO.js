@@ -7,7 +7,6 @@ exports.DynamoDBUserDAO = void 0;
 const tweeter_shared_1 = require("tweeter-shared");
 const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const DynamoDBClient_1 = __importDefault(require("../util/DynamoDBClient"));
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const TABLE_NAME = "Users";
 const documentClient = lib_dynamodb_1.DynamoDBDocumentClient.from(DynamoDBClient_1.default);
 class DynamoDBUserDAO {
@@ -50,7 +49,7 @@ class DynamoDBUserDAO {
             throw error;
         }
     }
-    async login(alias, password) {
+    async getUserWithPasswordHash(alias) {
         const params = {
             TableName: TABLE_NAME,
             Key: {
@@ -62,36 +61,21 @@ class DynamoDBUserDAO {
             if (!result.Item) {
                 return null;
             }
-            const storedPasswordHash = result.Item.passwordHash;
-            if (!storedPasswordHash) {
-                return null;
-            }
-            // Verify password
-            const isPasswordValid = await bcryptjs_1.default.compare(password, storedPasswordHash);
-            if (!isPasswordValid) {
-                return null;
-            }
-            // Return user (excluding password hash)
             const { passwordHash, ...userData } = result.Item;
-            return new tweeter_shared_1.User(userData.firstName, userData.lastName, userData.alias, userData.imageUrl);
+            const user = new tweeter_shared_1.User(userData.firstName, userData.lastName, userData.alias, userData.imageUrl);
+            return {
+                user: user,
+                passwordHash: passwordHash || ""
+            };
         }
         catch (error) {
-            console.error("Error during login:", error);
+            console.error("Error getting user with password hash:", error);
             throw error;
         }
     }
-    async register(firstName, lastName, alias, password, imageUrl) {
-        // // Check if user already exists
-        // const existingUser = await this.getUser(alias);
-        // if (existingUser !== null) {
-        //     throw new Error("User with this alias already exists");
-        // }
-        // Hash the password
-        const saltRounds = 10;
-        const passwordHash = await bcryptjs_1.default.hash(password, saltRounds);
-        // Create user object
+    async putUserWithPasswordHash(firstName, lastName, alias, passwordHash, imageUrl) {
         const user = new tweeter_shared_1.User(firstName, lastName, alias, imageUrl);
-        // Store user with password hash
+        // Store user with password hash (password should already be hashed by service layer)
         const params = {
             TableName: TABLE_NAME,
             Item: {
@@ -109,9 +93,41 @@ class DynamoDBUserDAO {
             return user;
         }
         catch (error) {
-            console.error("Error registering user:", error);
+            console.error("Error putting user with password hash:", error);
             throw error;
         }
+    }
+    // Template method for updating count fields
+    async updateCount(alias, countType, increment, errorMessage) {
+        const params = {
+            TableName: TABLE_NAME,
+            Key: {
+                alias: alias
+            },
+            UpdateExpression: `ADD ${countType} :val`,
+            ExpressionAttributeValues: {
+                ":val": increment
+            }
+        };
+        try {
+            await documentClient.send(new lib_dynamodb_1.UpdateCommand(params));
+        }
+        catch (error) {
+            console.error(errorMessage, error);
+            throw error;
+        }
+    }
+    async incrementFollowerCount(alias) {
+        await this.updateCount(alias, "followerCount", 1, "Error incrementing follower count:");
+    }
+    async decrementFollowerCount(alias) {
+        await this.updateCount(alias, "followerCount", -1, "Error decrementing follower count:");
+    }
+    async incrementFolloweeCount(alias) {
+        await this.updateCount(alias, "followeeCount", 1, "Error incrementing followee count:");
+    }
+    async decrementFolloweeCount(alias) {
+        await this.updateCount(alias, "followeeCount", -1, "Error decrementing followee count:");
     }
 }
 exports.DynamoDBUserDAO = DynamoDBUserDAO;

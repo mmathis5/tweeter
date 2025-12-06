@@ -14,5 +14,7 @@ export interface IStatusDAO {
   ): Promise<[StatusDto[], boolean]>;
 
   postStatus(status: Status): Promise<void>;
+
+  addStatusToFeed(userAlias: string, status: Status): Promise<void>;
 }
 

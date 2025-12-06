@@ -44,9 +44,39 @@ export class StatusService extends Service {
         newStatus.timestamp
       );
       
-      return await daoFactory.getStatusDAO().postStatus(statusWithOriginalUrl);
+      // Post status to Stories table (DAO handles only data access)
+      await daoFactory.getStatusDAO().postStatus(statusWithOriginalUrl);
+
+      // Business logic: Get all followers and add status to their feeds
+      const followerAliases = await this.getAllFollowerAliases(daoFactory, user.alias);
+
+      // Add status to each follower's feed
+      const feedPromises = followerAliases.map(followerAlias => 
+        daoFactory.getStatusDAO().addStatusToFeed(followerAlias, statusWithOriginalUrl)
+      );
+
+      await Promise.all(feedPromises);
     });
   };
+
+  private async getAllFollowerAliases(daoFactory: DAOFactory, followeeAlias: string): Promise<string[]> {
+    // Get all followers by paginating through results
+    const followerAliases: string[] = [];
+    let lastFollowerAlias: string | null = null;
+    const pageSize = 100;
+
+    do {
+      const [followers, hasMore] = await daoFactory.getFollowDAO().getFollowerAliases(
+        followeeAlias,
+        pageSize,
+        lastFollowerAlias
+      );
+      followerAliases.push(...followers);
+      lastFollowerAlias = hasMore && followers.length > 0 ? followers[followers.length - 1] : null;
+    } while (lastFollowerAlias !== null);
+
+    return followerAliases;
+  }
 
   private async getFakeData(lastItem: StatusDto | null, pageSize: number): Promise<[StatusDto[], boolean]>  {
     const [items, hasMore] = FakeData.instance.getPageOfStatuses(Status.fromDto(lastItem), pageSize);

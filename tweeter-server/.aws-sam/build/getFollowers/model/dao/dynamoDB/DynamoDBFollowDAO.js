@@ -6,11 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DynamoDBFollowDAO = void 0;
 const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const DynamoDBClient_1 = __importDefault(require("../util/DynamoDBClient"));
-const USERS_TABLE_NAME = "Users";
 const FOLLOWS_TABLE_NAME = "Follows";
 const documentClient = lib_dynamodb_1.DynamoDBDocumentClient.from(DynamoDBClient_1.default);
 class DynamoDBFollowDAO {
     async getFollowees(followerAlias, pageSize, lastFolloweeAlias) {
+        // This method should only return aliases from Follows table
+        // Service layer will fetch user data
+        const [followeeAliases, hasMore] = await this.getFolloweeAliases(followerAlias, pageSize, lastFolloweeAlias);
+        // Return empty array - service layer will populate with user data
+        return [[], hasMore];
+    }
+    async getFolloweeAliases(followerAlias, pageSize, lastFolloweeAlias) {
         const params = {
             TableName: FOLLOWS_TABLE_NAME,
             KeyConditionExpression: "followerAlias = :followerAlias",
@@ -34,37 +40,23 @@ class DynamoDBFollowDAO {
             // Determine if there are more pages
             const hasMore = result.Items.length > pageSize;
             const followeeItems = hasMore ? result.Items.slice(0, pageSize) : result.Items;
-            // Extract followee aliases and fetch user data
+            // Extract followee aliases only (no Users table access)
             const followeeAliases = followeeItems.map(item => item.followeeAlias);
-            const followees = [];
-            // Fetch user data for each followee
-            for (const alias of followeeAliases) {
-                const userParams = {
-                    TableName: USERS_TABLE_NAME,
-                    Key: {
-                        alias: alias
-                    }
-                };
-                const userResult = await documentClient.send(new lib_dynamodb_1.GetCommand(userParams));
-                if (userResult.Item) {
-                    // Extract user data (excluding password hash) and create UserDto
-                    const { passwordHash, ...userData } = userResult.Item;
-                    followees.push({
-                        firstName: userData.firstName,
-                        lastName: userData.lastName,
-                        alias: userData.alias,
-                        imageUrl: userData.imageUrl
-                    });
-                }
-            }
-            return [followees, hasMore];
+            return [followeeAliases, hasMore];
         }
         catch (error) {
-            console.error("Error getting followees:", error);
+            console.error("Error getting followee aliases:", error);
             throw error;
         }
     }
     async getFollowers(followeeAlias, pageSize, lastFollowerAlias) {
+        // This method should only return aliases from Follows table
+        // Service layer will fetch user data
+        const [followerAliases, hasMore] = await this.getFollowerAliases(followeeAlias, pageSize, lastFollowerAlias);
+        // Return empty array - service layer will populate with user data
+        return [[], hasMore];
+    }
+    async getFollowerAliases(followeeAlias, pageSize, lastFollowerAlias) {
         const GSI_NAME = "followeeAlias-followerAlias-index";
         // Build query parameters for GSI
         const params = {
@@ -91,33 +83,12 @@ class DynamoDBFollowDAO {
             // Determine if there are more pages
             const hasMore = result.Items.length > pageSize;
             const followerItems = hasMore ? result.Items.slice(0, pageSize) : result.Items;
-            // Extract follower aliases and fetch user data
+            // Extract follower aliases only (no Users table access)
             const followerAliases = followerItems.map(item => item.followerAlias);
-            const followers = [];
-            // Fetch user data for each follower
-            for (const alias of followerAliases) {
-                const userParams = {
-                    TableName: USERS_TABLE_NAME,
-                    Key: {
-                        alias: alias
-                    }
-                };
-                const userResult = await documentClient.send(new lib_dynamodb_1.GetCommand(userParams));
-                if (userResult.Item) {
-                    // Extract user data (excluding password hash) and create UserDto
-                    const { passwordHash, ...userData } = userResult.Item;
-                    followers.push({
-                        firstName: userData.firstName,
-                        lastName: userData.lastName,
-                        alias: userData.alias,
-                        imageUrl: userData.imageUrl
-                    });
-                }
-            }
-            return [followers, hasMore];
+            return [followerAliases, hasMore];
         }
         catch (error) {
-            console.error("Error getting followers:", error);
+            console.error("Error getting follower aliases:", error);
             throw error;
         }
     }
@@ -139,44 +110,32 @@ class DynamoDBFollowDAO {
         }
     }
     async getFolloweeCount(followerAlias) {
-        const params = {
-            TableName: USERS_TABLE_NAME,
-            Key: {
-                alias: followerAlias
-            }
-        };
-        try {
-            const result = await documentClient.send(new lib_dynamodb_1.GetCommand(params));
-            if (!result.Item) {
-                return 0;
-            }
-            return result.Item.followeeCount ?? 0;
-        }
-        catch (error) {
-            console.error("Error getting followee count:", error);
-            throw error;
-        }
+        // Count from Follows table, not Users table
+        let count = 0;
+        let lastFolloweeAlias = null;
+        const pageSize = 100;
+        do {
+            const [followeeAliases, hasMore] = await this.getFolloweeAliases(followerAlias, pageSize, lastFolloweeAlias);
+            count += followeeAliases.length;
+            lastFolloweeAlias = hasMore && followeeAliases.length > 0 ? followeeAliases[followeeAliases.length - 1] : null;
+        } while (lastFolloweeAlias !== null);
+        return count;
     }
     async getFollowerCount(followeeAlias) {
-        const params = {
-            TableName: USERS_TABLE_NAME,
-            Key: {
-                alias: followeeAlias
-            }
-        };
-        try {
-            const result = await documentClient.send(new lib_dynamodb_1.GetCommand(params));
-            if (!result.Item) {
-                return 0;
-            }
-            return result.Item.followerCount ?? 0;
-        }
-        catch (error) {
-            console.error("Error getting follower count:", error);
-            throw error;
-        }
+        // Count from Follows table, not Users table
+        let count = 0;
+        let lastFollowerAlias = null;
+        const pageSize = 100;
+        do {
+            const [followerAliases, hasMore] = await this.getFollowerAliases(followeeAlias, pageSize, lastFollowerAlias);
+            count += followerAliases.length;
+            lastFollowerAlias = hasMore && followerAliases.length > 0 ? followerAliases[followerAliases.length - 1] : null;
+        } while (lastFollowerAlias !== null);
+        return count;
     }
     async follow(followerAlias, followeeAlias) {
+        // This method should only work with Follows table
+        // Count updates should be handled by service layer via UserDAO
         const followParams = {
             TableName: FOLLOWS_TABLE_NAME,
             Item: {
@@ -186,29 +145,6 @@ class DynamoDBFollowDAO {
         };
         try {
             await documentClient.send(new lib_dynamodb_1.PutCommand(followParams));
-            // Increment followeeCount for the follower in the Users table
-            const updateParamsFollower = {
-                TableName: USERS_TABLE_NAME,
-                Key: {
-                    alias: followerAlias
-                },
-                UpdateExpression: "ADD followeeCount :inc",
-                ExpressionAttributeValues: {
-                    ":inc": 1
-                }
-            };
-            await documentClient.send(new lib_dynamodb_1.UpdateCommand(updateParamsFollower));
-            const updateParamsFollowee = {
-                TableName: USERS_TABLE_NAME,
-                Key: {
-                    alias: followeeAlias
-                },
-                UpdateExpression: "ADD followerCount :inc",
-                ExpressionAttributeValues: {
-                    ":inc": 1
-                }
-            };
-            await documentClient.send(new lib_dynamodb_1.UpdateCommand(updateParamsFollowee));
         }
         catch (error) {
             console.error("Error following:", error);
@@ -216,6 +152,8 @@ class DynamoDBFollowDAO {
         }
     }
     async unfollow(followerAlias, followeeAlias) {
+        // This method should only work with Follows table
+        // Count updates should be handled by service layer via UserDAO
         const deleteParams = {
             TableName: FOLLOWS_TABLE_NAME,
             Key: {
@@ -225,29 +163,6 @@ class DynamoDBFollowDAO {
         };
         try {
             await documentClient.send(new lib_dynamodb_1.DeleteCommand(deleteParams));
-            // if successful, Decrement followeeCount for the follower in the Users table
-            const updateParamsFollower = {
-                TableName: USERS_TABLE_NAME,
-                Key: {
-                    alias: followerAlias
-                },
-                UpdateExpression: "ADD followeeCount :dec",
-                ExpressionAttributeValues: {
-                    ":dec": -1
-                }
-            };
-            await documentClient.send(new lib_dynamodb_1.UpdateCommand(updateParamsFollower));
-            const updateParamsFollowee = {
-                TableName: USERS_TABLE_NAME,
-                Key: {
-                    alias: followeeAlias
-                },
-                UpdateExpression: "ADD followerCount :dec",
-                ExpressionAttributeValues: {
-                    ":dec": -1
-                }
-            };
-            await documentClient.send(new lib_dynamodb_1.UpdateCommand(updateParamsFollowee));
         }
         catch (error) {
             console.error("Error unfollowing:", error);

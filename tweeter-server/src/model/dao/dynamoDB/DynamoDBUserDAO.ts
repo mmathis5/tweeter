@@ -1,8 +1,7 @@
 import { User } from "tweeter-shared";
 import { IUserDAO } from "../IUserDAO";
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import dynamoDBClient from "../util/DynamoDBClient";
-import bcrypt from "bcryptjs";
 
 const TABLE_NAME = "Users";
 const documentClient = DynamoDBDocumentClient.from(dynamoDBClient);
@@ -56,7 +55,7 @@ export class DynamoDBUserDAO implements IUserDAO {
         }
     }
 
-    async login(alias: string, password: string): Promise<User | null> {
+    async getUserWithPasswordHash(alias: string): Promise<{ user: User; passwordHash: string } | null> {
         const params = {
             TableName: TABLE_NAME,
             Key: {
@@ -71,52 +70,34 @@ export class DynamoDBUserDAO implements IUserDAO {
                 return null;
             }
 
-            const storedPasswordHash = result.Item.passwordHash;
-            if (!storedPasswordHash) {
-                return null;
-            }
-
-            // Verify password
-            const isPasswordValid = await bcrypt.compare(password, storedPasswordHash);
-            if (!isPasswordValid) {
-                return null;
-            }
-
-            // Return user (excluding password hash)
             const { passwordHash, ...userData } = result.Item;
-            return new User(
+            const user = new User(
                 userData.firstName,
                 userData.lastName,
                 userData.alias,
                 userData.imageUrl
             );
+
+            return {
+                user: user,
+                passwordHash: passwordHash || ""
+            };
         } catch (error) {
-            console.error("Error during login:", error);
+            console.error("Error getting user with password hash:", error);
             throw error;
         }
     }
 
-    async register(
+    async putUserWithPasswordHash(
         firstName: string,
         lastName: string,
         alias: string,
-        password: string,
+        passwordHash: string,
         imageUrl: string
     ): Promise<User> {
-        // // Check if user already exists
-        // const existingUser = await this.getUser(alias);
-        // if (existingUser !== null) {
-        //     throw new Error("User with this alias already exists");
-        // }
-
-        // Hash the password
-        const saltRounds = 10;
-        const passwordHash = await bcrypt.hash(password, saltRounds);
-
-        // Create user object
         const user = new User(firstName, lastName, alias, imageUrl);
 
-        // Store user with password hash
+        // Store user with password hash (password should already be hashed by service layer)
         const params = {
             TableName: TABLE_NAME,
             Item: {
@@ -134,8 +115,50 @@ export class DynamoDBUserDAO implements IUserDAO {
             await documentClient.send(new PutCommand(params));
             return user;
         } catch (error) {
-            console.error("Error registering user:", error);
+            console.error("Error putting user with password hash:", error);
             throw error;
         }
+    }
+
+    // Template method for updating count fields
+    private async updateCount(
+        alias: string,
+        countType: "followerCount" | "followeeCount",
+        increment: number,
+        errorMessage: string
+    ): Promise<void> {
+        const params = {
+            TableName: TABLE_NAME,
+            Key: {
+                alias: alias
+            },
+            UpdateExpression: `ADD ${countType} :val`,
+            ExpressionAttributeValues: {
+                ":val": increment
+            }
+        };
+
+        try {
+            await documentClient.send(new UpdateCommand(params));
+        } catch (error) {
+            console.error(errorMessage, error);
+            throw error;
+        }
+    }
+
+    async incrementFollowerCount(alias: string): Promise<void> {
+        await this.updateCount(alias, "followerCount", 1, "Error incrementing follower count:");
+    }
+
+    async decrementFollowerCount(alias: string): Promise<void> {
+        await this.updateCount(alias, "followerCount", -1, "Error decrementing follower count:");
+    }
+
+    async incrementFolloweeCount(alias: string): Promise<void> {
+        await this.updateCount(alias, "followeeCount", 1, "Error incrementing followee count:");
+    }
+
+    async decrementFolloweeCount(alias: string): Promise<void> {
+        await this.updateCount(alias, "followeeCount", -1, "Error decrementing followee count:");
     }
 }
